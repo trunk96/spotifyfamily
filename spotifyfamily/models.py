@@ -1,3 +1,30 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 # Create your models here.
+class Subscription(models.Model):
+    start_date = models.DateField()
+    name = models.CharField(max_length=100)
+    users = models.ManyToManyField("User", through="SubscriptionDetails")
+    renew_period = models.IntegerField(default=1)  # in months
+    cost = models.FloatField()  # in EUR
+    def __str__(self):
+        return f"{self.name} - from {self.start_date}"
+
+
+class UserSubscription(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    subscriptions = models.ManyToManyField(Subscription, through="SubscriptionDetails")
+    def __str__(self):
+        return self.user.username
+
+class SubscriptionDetails(models.Model):
+    last_payment_date = models.DateField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "subscription"], name="unique_user_subscription"
+            )
+        ]
