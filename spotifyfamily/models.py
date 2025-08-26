@@ -10,13 +10,9 @@ class Subscription(models.Model):
     cost = models.FloatField()  # in EUR
     def __str__(self):
         return f"{self.name} - from {self.start_date}"
-    
-class User(AbstractUser):
-    email = models.EmailField('email address', unique=True)
-    subscriptions = models.ManyToManyField(Subscription, through="SubscriptionDetails")
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
 
+class User(AbstractUser):
+    subscriptions = models.ManyToManyField(Subscription, through="SubscriptionDetails")
 
 class SubscriptionDetails(models.Model):
     last_payment_date = models.DateField()
