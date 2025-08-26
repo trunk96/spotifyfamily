@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
 class Subscription(models.Model):
@@ -10,7 +10,11 @@ class Subscription(models.Model):
     cost = models.FloatField()  # in EUR
     def __str__(self):
         return f"{self.name} - from {self.start_date}"
-
+    
+class User(AbstractUser):
+    email = models.EmailField('email address', unique=True)
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
 
 class UserSubscription(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
