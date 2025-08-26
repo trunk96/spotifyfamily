@@ -1,6 +1,11 @@
-from django.shortcuts import render
 from django.http import HttpResponse
+from django.template import loader
+
+from .models import Subscription
 
 # Create your views here.
 def index(request):
-    return HttpResponse("Hello, world. You're at the polls index.")
+    subscriptions = Subscription.objects.order_by("-start_date")
+    template = loader.get_template("polls/index.html")
+    context = {"subscriptions": subscriptions}
+    return HttpResponse(template.render(context, request))

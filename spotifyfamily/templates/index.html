@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en-US">
+    <head>
+        <meta charset="utf-8" />
+        <title>Subscriptions</title>
+    </head>
+    <body>
+        {% if subscriptions %}
+        <ul>
+        {% for subscription in subscriptions %}
+            <li><a href="/subscriptions/{{ subscription.id }}/">{{ subscription.name }}</a></li>
+        {% endfor %}
+        </ul>
+        {% else %}
+            <p>No subscriptions are available.</p>
+        {% endif %}
+    </body>
+</html>
+
