@@ -5,16 +5,22 @@ from django.contrib.auth.models import AbstractUser
 class Subscription(models.Model):
     start_date = models.DateField()
     name = models.CharField(max_length=100)
-    users = models.ManyToManyField("User", through="SubscriptionDetails")
+    users = models.ManyToManyField("User", through="SubscriptionDetail")
+    admin_user = models.ForeignKey("User", on_delete=models.CASCADE)
     renew_period = models.IntegerField(default=1)  # in months
-    cost = models.FloatField()  # in EUR
     def __str__(self):
         return f"{self.name} - from {self.start_date}"
 
-class User(AbstractUser):
-    subscriptions = models.ManyToManyField(Subscription, through="SubscriptionDetails")
+class SubscriptionPrice(models.Model):
+    subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE)
+    price = models.FloatField()  # in EUR
+    valid_from = models.DateField()
+    valid_to = models.DateField()
 
-class SubscriptionDetails(models.Model):
+class User(AbstractUser):
+    subscriptions = models.ManyToManyField(Subscription, through="SubscriptionDetail")
+
+class SubscriptionDetail(models.Model):
     last_payment_date = models.DateField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE)
