@@ -15,7 +15,7 @@ class SubscriptionPrice(models.Model):
     subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE)
     price = models.FloatField()  # in EUR
     valid_from = models.DateField()
-    valid_to = models.DateField()
+    valid_to = models.DateField(blank=True, null=True)
 
 class User(AbstractUser):
     subscriptions = models.ManyToManyField(Subscription, through="SubscriptionDetail")
