@@ -24,9 +24,9 @@ def login(request):
                 login(request, user)
                 return redirect("home")
             else:
-                return render(request, "registration/login.html", {"form": form, "message": "Invalid username or password."})
+                return render(request, "registration/login.html", {"form": form, "messages": ["Invalid username or password."]})
         else:
-            return render(request, "registration/login.html", {"form": form, "message": "Invalid username or password."})
+            return render(request, "registration/login.html", {"form": form, "messages": ["Invalid username or password."]})
     else:
         form = AuthenticationForm()
         return render(request, "registration/login.html", {"form": form})
