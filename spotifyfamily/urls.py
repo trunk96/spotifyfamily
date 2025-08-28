@@ -8,5 +8,5 @@ from django.urls import include
 urlpatterns = [
     #path("", views.index, name="index"),
     path("", TemplateView.as_view(template_name="home.html"), name="home"),  # new
-    path("", include("django.contrib.auth.urls")),
+    path("accounts/", include("django.contrib.auth.urls")),
 ]
