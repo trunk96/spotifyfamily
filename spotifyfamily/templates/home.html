@@ -4,11 +4,48 @@
 
 {% block content %}
 {% if user.is_authenticated %}
-Hi {{ user.username }}!
+Ciao {{ user.username }}!
 <form action="{% url 'logout' %}" method="post">
     {% csrf_token %} 
     <button type="submit">Logout</button>
 </form>
+
+<h3>Le tue sottoscrizioni:</h3>
+<ul>
+    {% for subscription in subscriptions %}
+    <li>{{ subscription.name }} - Inizio: {{ subscription.start_date }} - Fine: {{ subscription.end_date }}</li>
+    {% empty %}
+    <li>Nessuna sottoscrizione attiva.</li>
+    {% endfor %}
+</ul>
+<button id="showFormBtn" class="btn btn-primary mb-3">Aggiungi sottoscrizione</button>
+
+<div id="subscriptionFormContainer" class="card p-3" style="display:none;">
+    <form id="subscriptionForm" method="post" action="{% url 'add_subscription' %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="name" class="form-label">Nome:</label>
+            <input type="text" id="name" name="name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="start_date" class="form-label">Inizio:</label>
+            <input type="date" id="start_date" name="start_date" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="end_date" class="form-label">Fine:</label>
+            <input type="date" id="end_date" name="end_date" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-success">Crea</button>
+    </form>
+</div>
+
+<script>
+document.getElementById('showFormBtn').addEventListener('click', function() {
+    var formContainer = document.getElementById('subscriptionFormContainer');
+    formContainer.style.display = formContainer.style.display === 'none' ? 'block' : 'none';
+});
+</script>
+
 {% else %}
 <p>You are not logged in</p>
 <a href="{% url 'login' %}">Log In</a>

@@ -10,9 +10,27 @@ from django.contrib.auth import logout
 # Create your views here.
 def index(request):
     subscriptions = Subscription.objects.order_by("-start_date")
-    template = loader.get_template("index.html")
+    template = loader.get_template("home.html")
     context = {"subscriptions": subscriptions}
     return HttpResponse(template.render(context, request))
+
+
+def add_subscription(request):
+    if request.method == "POST":
+        name = request.POST.get("name")
+        start_date = request.POST.get("start_date")
+        end_date = request.POST.get("end_date", None)
+        if name and start_date and end_date:
+            Subscription.objects.create(
+                name=name,
+                start_date=start_date,
+                end_date=end_date
+            )
+            messages.success(request, "Subscription added successfully.")
+            return redirect("home")
+        else:
+            messages.error(request, "All fields marked with * are required.")
+    return render(request, "add_subscription.html")
 
 
 def login_view(request):
