@@ -28,7 +28,9 @@ def login_view(request):
             else:
                 return render(request, "registration/login.html", {"form": form})
         else:
-            messages.error(request, form.errors)
+            for _, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{error}")
             return render(request, "registration/login.html", {"form": form})
     else:
         form = AuthenticationForm()
