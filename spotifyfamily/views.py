@@ -6,6 +6,7 @@ from .models import Subscription
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import logout
+from django.views.decorators.http import require_POST
 
 # Create your views here.
 def index(request):
@@ -15,22 +16,27 @@ def index(request):
     return HttpResponse(template.render(context, request))
 
 
-def add_subscription(request):
-    if request.method == "POST":
-        name = request.POST.get("name")
-        start_date = request.POST.get("start_date")
-        end_date = request.POST.get("end_date", None)
-        if name and start_date and end_date:
-            Subscription.objects.create(
-                name=name,
-                start_date=start_date,
-                end_date=end_date
-            )
-            messages.success(request, "Subscription added successfully.")
-            return redirect("home")
-        else:
-            messages.error(request, "All fields marked with * are required.")
-    return render(request, "add_subscription.html")
+@require_POST
+def create_subscription(request):
+    name = request.POST.get("name")
+    start_date = request.POST.get("start_date")
+    end_date = request.POST.get("end_date", None)
+    if name and start_date and end_date:
+        Subscription.objects.create(
+            name=name,
+            start_date=start_date,
+            end_date=end_date
+        )
+        messages.success(request, "Subscription added successfully.")
+        return redirect("home")
+    else:
+        messages.error(request, "All fields marked with * are required.")
+    return render(request, "home.html")
+
+
+def subscription_detail(request, pk):
+    subscription = Subscription.objects.get(pk=pk)
+    return render(request, "subscription_detail.html", {"subscription": subscription})
 
 
 def login_view(request):
