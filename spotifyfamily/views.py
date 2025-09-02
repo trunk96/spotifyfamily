@@ -26,10 +26,9 @@ def login_view(request):
                 login(request, user)
                 return redirect("home")
             else:
-                messages.error(request, 'Invalid Username or Password')
                 return render(request, "registration/login.html", {"form": form})
         else:
-            messages.error(request, 'Invalid CSRF Token')
+            messages.error(request, form.errors)
             return render(request, "registration/login.html", {"form": form})
     else:
         form = AuthenticationForm()
