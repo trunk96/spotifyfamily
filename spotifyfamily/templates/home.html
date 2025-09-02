@@ -21,7 +21,7 @@ Ciao {{ user.username }}!
 <button id="showFormBtn" class="btn btn-primary mb-3">Aggiungi sottoscrizione</button>
 
 <div id="subscriptionFormContainer" class="card p-3" style="display:none;">
-    <form id="subscriptionForm" method="post" action="{% url 'add_subscription' %}">
+    <form id="subscriptionForm" method="post" action="{% url 'create_subscription' %}">
         {% csrf_token %}
         <div class="mb-3">
             <label for="name" class="form-label">Nome:</label>
