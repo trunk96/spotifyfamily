@@ -49,7 +49,11 @@ Ciao {{ user.username }}!
         </div>
         <div class="mb-3">
             <label for="renew_period" class="form-label">Periodo di rinnovo (in mesi):</label>
-            <input type="number" id="renew_period" name="renew_period" class="form-control">
+            <input type="number" id="renew_period" name="renew_period" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="price" class="form-label">Prezzo (€):</label>
+            <input type="number" id="price" name="price" class="form-control" step="0.01" min="0" required>
         </div>
         <button type="submit" class="btn btn-success">Crea</button>
     </form>

@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.template import loader
 from django.contrib.auth import authenticate, login
 from django.shortcuts import redirect, render
-from .models import Subscription
+from .models import Subscription, SubscriptionDetail, SubscriptionPrice
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import logout
@@ -23,15 +23,24 @@ def index(request):
 def create_subscription(request):
     name = request.POST.get("name")
     start_date = request.POST.get("start_date")
-    end_date = request.POST.get("end_date", None)
     renew_period = request.POST.get("renew_period", 1)
-    if name and start_date and end_date:
-        Subscription.objects.create(
+    price = request.POST.get("price")
+    if name and start_date and renew_period and price:
+        sub = Subscription.objects.create(
             name=name,
             start_date=start_date,
-            end_date=end_date,
             admin=request.user,
-            renew_period=renew_period
+            renew_period=renew_period,
+        )
+        SubscriptionDetail.objects.create(
+            subscription=sub,
+            user=request.user,
+            last_payment_date=start_date,
+        )
+        SubscriptionPrice.objects.create(
+            subscription=sub,
+            price=price,
+            valid_from=start_date,
         )
         messages.success(request, "Subscription added successfully.")
         return redirect("home")
