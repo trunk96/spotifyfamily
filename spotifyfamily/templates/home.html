@@ -13,7 +13,23 @@ Ciao {{ user.username }}!
 <h3>Le tue sottoscrizioni:</h3>
 <ul>
     {% for subscription in subscriptions %}
-    <li>{{ subscription.name }} - Inizio: {{ subscription.start_date }} - Fine: {{ subscription.end_date }}</li>
+    <li>
+        {{ subscription.name }} - Inizio: {{ subscription.start_date }} - Fine: {{ subscription.end_date }}
+        <a href="{% url 'subscription_detail' subscription.id %}" class="btn btn-info btn-sm" title="Dettagli"></a>
+            <i class="fas fa-info-circle"></i>
+        </a>
+        {% if subscription.admin == user %}
+            <a href="{% url 'edit_subscription' subscription.id %}" class="btn btn-warning btn-sm" title="Modifica">
+                <i class="fas fa-edit"></i>
+            </a>
+            <form action="{% url 'delete_subscription' subscription.id %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm" title="Elimina">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </form>
+        {% endif %}
+    </li>
     {% empty %}
     <li>Nessuna sottoscrizione attiva.</li>
     {% endfor %}
@@ -32,8 +48,8 @@ Ciao {{ user.username }}!
             <input type="date" id="start_date" name="start_date" class="form-control" required>
         </div>
         <div class="mb-3">
-            <label for="end_date" class="form-label">Fine:</label>
-            <input type="date" id="end_date" name="end_date" class="form-control">
+            <label for="renew_period" class="form-label">Periodo di rinnovo (in mesi):</label>
+            <input type="number" id="renew_period" name="renew_period" class="form-control">
         </div>
         <button type="submit" class="btn btn-success">Crea</button>
     </form>

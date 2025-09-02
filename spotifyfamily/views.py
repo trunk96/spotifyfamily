@@ -7,6 +7,8 @@ from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import logout
 from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 def index(request):
@@ -16,16 +18,20 @@ def index(request):
     return HttpResponse(template.render(context, request))
 
 
+@login_required
 @require_POST
 def create_subscription(request):
     name = request.POST.get("name")
     start_date = request.POST.get("start_date")
     end_date = request.POST.get("end_date", None)
+    renew_period = request.POST.get("renew_period", 1)
     if name and start_date and end_date:
         Subscription.objects.create(
             name=name,
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
+            admin=request.user,
+            renew_period=renew_period
         )
         messages.success(request, "Subscription added successfully.")
         return redirect("home")
@@ -37,6 +43,38 @@ def create_subscription(request):
 def subscription_detail(request, pk):
     subscription = Subscription.objects.get(pk=pk)
     return render(request, "subscription_detail.html", {"subscription": subscription})
+
+@login_required
+def edit_subscription(request, pk):
+    subscription = get_object_or_404(Subscription, pk=pk)
+    if request.user != subscription.admin:
+        messages.error(request, "You are not authorized to edit this subscription.")
+        return redirect("home")
+    if request.method == "POST":
+        name = request.POST.get("name")
+        start_date = request.POST.get("start_date")
+        end_date = request.POST.get("end_date", None)
+        if name and start_date and end_date:
+            subscription.name = name
+            subscription.start_date = start_date
+            subscription.end_date = end_date
+            subscription.save()
+            messages.success(request, "Subscription updated successfully.")
+            return redirect("subscription_detail", pk=subscription.pk)
+        else:
+            messages.error(request, "All fields marked with * are required.")
+    return render(request, "edit_subscription.html", {"subscription": subscription})
+
+@login_required
+@require_POST
+def delete_subscription(request, pk):
+    subscription = get_object_or_404(Subscription, pk=pk)
+    if request.user != subscription.admin:
+        messages.error(request, "You are not authorized to delete this subscription.")
+        return redirect("home")
+    subscription.delete()
+    messages.success(request, "Subscription deleted successfully.")
+    return redirect("home")
 
 
 def login_view(request):
