@@ -29,7 +29,7 @@ def create_subscription(request):
         sub = Subscription.objects.create(
             name=name,
             start_date=start_date,
-            admin=request.user,
+            admin_user=request.user,
             renew_period=renew_period,
         )
         SubscriptionDetail.objects.create(
