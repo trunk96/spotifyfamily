@@ -16,7 +16,15 @@ RUN pip install --upgrade pip
  
 # Copy the requirements file first (better caching)
 COPY requirements.txt /app/
- 
+
+# Install some prerequisites in case we have to build pip packages from source
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libffi-dev \
+    libssl-dev \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+    
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
  
