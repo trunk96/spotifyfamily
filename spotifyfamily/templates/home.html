@@ -12,24 +12,112 @@ Ciao {{ user.username }}!
 
 <h3>Le tue sottoscrizioni:</h3>
 <ul>
-    {% for subscription in subscriptions %}
+    {% for sub_data in subscriptions_data %}
+    {% with subscription=sub_data.subscription %}
     <li>
-        {{ subscription.name }} - Inizio: {{ subscription.start_date }} - Fine: {{ subscription.end_date }}. Admin: {{ subscription.admin == user }}   
-        <a href="{% url 'subscription_detail' subscription.id %}" class="btn btn-info btn-sm" title="Dettagli"></a>
+        {{ subscription.name }} - Inizio: {{ subscription.start_date }} - Fine: {% if subscription.end_date %}{{ subscription.end_date }}{% else %}-{% endif %} 
+        <button class="btn btn-secondary btn-sm" onclick="toggleDetails({{ subscription.id }})" title="Mostra/Nascondi dettagli">
             <i class="fas fa-info-circle"></i>
-        </a>
-        {% if subscription.admin == user %}
+        </button>
+        {% if subscription.admin_user.id == user.id %}
             <a href="{% url 'edit_subscription' subscription.id %}" class="btn btn-warning btn-sm" title="Modifica">
-                <i class="fas fa-edit"></i>
+            <i class="fas fa-edit"></i>
             </a>
             <form action="{% url 'delete_subscription' subscription.id %}" method="post" style="display:inline;">
-                {% csrf_token %}
+            {% csrf_token %}
                 <button type="submit" class="btn btn-danger btn-sm" title="Elimina">
                     <i class="fas fa-trash-alt"></i>
                 </button>
             </form>
         {% endif %}
+        <div id="details-{{ subscription.id }}" style="display:none; margin-top: 10px; padding: 10px; border: 1px solid #ddd; background-color: #f9f9f9;">
+            <p><strong>Nome:</strong> {{ subscription.name }}</p>
+            <p><strong>Amministratore:</strong> {{ subscription.admin_user.username }}</p>
+            <p><strong>Data inizio:</strong> {{ subscription.start_date }}</p>
+            <p><strong>Data fine:</strong> {% if subscription.end_date %}{{ subscription.end_date }}{% else %}-{% endif %}</p>
+            <p><strong>Periodo di rinnovo:</strong> {{ subscription.renew_period }} mesi</p>
+            
+            <p><strong>Prezzi:</strong></p>
+            <ul>
+                {% for price in subscription.prices.all %}
+                <li>
+                    €{{ price.price }} 
+                    (dal {{ price.valid_from }}
+                    {% if price.valid_to %}
+                        al {{ price.valid_to }}
+                    {% else %}
+                        - attivo
+                    {% endif %})
+                </li>
+                {% empty %}
+                <li>Nessun prezzo disponibile</li>
+                {% endfor %}
+            </ul>
+
+            <!-- Stato Pagamenti -->
+            <p><strong>Stato Pagamenti:</strong></p>
+            {% if subscription.admin_user.id == user.id %}
+                <!-- Amministratore: vede tutti gli utenti -->
+                <table class="table table-sm table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Utente</th>
+                            <th>Ultimo mese pagato</th>
+                            <th>Periodi non pagati</th>
+                            <th>Importo totale da pagare</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in sub_data.user_payments %}
+                        <tr {% if payment.is_overdue %}class="table-danger"{% elif payment.amount_to_pay == 0 %}class="table-success"{% endif %}>
+                            <td>{{ payment.user.username }}</td>
+                            <td>{{ payment.last_paid_month }}</td>
+                            <td>
+                                {% if payment.months_unpaid > 0 %}
+                                    {{ payment.months_unpaid }} period{% if payment.months_unpaid > 1 %}i{% else %}o{% endif %}
+                                {% else %}
+                                    <span class="badge badge-success">In regola</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>€{{ payment.amount_to_pay }}</strong>
+                                {% if payment.is_overdue %}
+                                    <span class="badge badge-danger ml-1">Da pagare</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if payment.is_overdue %}
+                                <button class="btn btn-primary btn-sm" onclick="showPaymentForm({{ subscription.id }}, {{ payment.user.id }}, '{{ payment.user.username }}', {{ payment.amount_to_pay }})" title="Registra pagamento">
+                                    <i class="fas fa-euro-sign"></i> Registra
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <!-- Utente normale: vede solo il proprio stato -->
+                {% for payment in sub_data.user_payments %}
+                    {% if payment.user.id == user.id %}
+                    <div class="alert {% if payment.is_overdue %}alert-danger{% else %}alert-success{% endif %}" role="alert">
+                        <strong>Il tuo stato di pagamento:</strong><br>
+                        Ultimo mese pagato: <strong>{{ payment.last_paid_month }}</strong><br>
+                        {% if payment.months_unpaid > 0 %}
+                            Periodi non pagati: <strong>{{ payment.months_unpaid }}</strong><br>
+                            <span style="font-size: 1.2em;">Importo totale da pagare: <strong>€{{ payment.amount_to_pay }}</strong></span>
+                            <br><span class="badge badge-danger mt-2">⚠ Hai pagamenti arretrati!</span>
+                        {% else %}
+                            <span class="badge badge-success">✓ Sei in regola con i pagamenti</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
     </li>
+    {% endwith %}
     {% empty %}
     <li>Nessuna sottoscrizione attiva.</li>
     {% endfor %}
@@ -59,11 +147,66 @@ Ciao {{ user.username }}!
     </form>
 </div>
 
+<!-- Modal per registrare pagamento -->
+<div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paymentModalLabel">Registra Pagamento</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="paymentForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Utente: <strong id="payment-username"></strong></p>
+                    <div class="form-group">
+                        <label for="amount_paid">Importo ricevuto (€):</label>
+                        <input type="number" class="form-control" id="amount_paid" name="amount_paid" step="0.01" min="0" required>
+                        <small class="form-text text-muted">Importo suggerito: €<span id="suggested-amount"></span></small>
+                    </div>
+                    <div class="form-group">
+                        <label for="payment_date">Data pagamento:</label>
+                        <input type="date" class="form-control" id="payment_date" name="payment_date" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Annulla</button>
+                    <button type="submit" class="btn btn-primary">Registra Pagamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
+function toggleDetails(subscriptionId) {
+    var detailsDiv = document.getElementById('details-' + subscriptionId);
+    detailsDiv.style.display = detailsDiv.style.display === 'none' ? 'block' : 'none';
+}
+
 document.getElementById('showFormBtn').addEventListener('click', function() {
     var formContainer = document.getElementById('subscriptionFormContainer');
     formContainer.style.display = formContainer.style.display === 'none' ? 'block' : 'none';
 });
+
+function showPaymentForm(subscriptionId, userId, username, suggestedAmount) {
+    document.getElementById('payment-username').textContent = username;
+    document.getElementById('suggested-amount').textContent = suggestedAmount.toFixed(2);
+    document.getElementById('amount_paid').value = suggestedAmount.toFixed(2);
+    
+    // Imposta la data di oggi
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('payment_date').value = today;
+    
+    // Imposta l'action del form
+    var form = document.getElementById('paymentForm');
+    form.action = '/subscription/' + subscriptionId + '/user/' + userId + '/payment/';
+    
+    // Mostra il modal
+    $('#paymentModal').modal('show');
+}
 </script>
 
 {% else %}

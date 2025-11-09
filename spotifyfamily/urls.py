@@ -10,6 +10,8 @@ urlpatterns = [
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
     path("subscription/create/", views.create_subscription, name="create_subscription"),
-    path("subscription/<int:pk>/", views.subscription_detail, name="subscription_detail"),
+    path("subscription/<int:pk>/edit/", views.edit_subscription, name="edit_subscription"),
+    path("subscription/<int:pk>/delete/", views.delete_subscription, name="delete_subscription"),
+    path("subscription/<int:subscription_id>/user/<int:user_id>/payment/", views.register_payment, name="register_payment"),
     #path("accounts/", include("django.contrib.auth.urls")),
 ]
